@@ -78,8 +78,8 @@ func (s *Server) GetUsersHandler(w http.ResponseWriter, r *http.Request, u datab
 
 func (s *Server) PostFeedsHandler(w http.ResponseWriter, r *http.Request, u database.User) {
 	var req struct {
-		Name string `json="name"`
-		URL  string `json="url"`
+		Name string `json:"name"`
+		URL  string `json:"url"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {

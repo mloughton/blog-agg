@@ -1,8 +1,11 @@
 package main
 
 import (
+	"time"
+
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/mloughton/blog-agg/internal/feeds"
 	"github.com/mloughton/blog-agg/internal/server"
 )
 
@@ -11,9 +14,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	server, err := server.NewServer()
+	httpServer, internalServer, err := server.NewServer()
 	if err != nil {
 		panic(err)
 	}
-	server.ListenAndServe()
+	go feeds.StartScraping(internalServer.DB, 10, time.Duration(60*time.Second))
+	httpServer.ListenAndServe()
 }

@@ -16,19 +16,19 @@ type Server struct {
 	DB *database.Queries
 }
 
-func NewServer() (*http.Server, error) {
+func NewServer() (*http.Server, *Server, error) {
 	port := os.Getenv("PORT")
 	if port == "" {
-		return nil, errors.New("couldn't find port in .env")
+		return nil, nil, errors.New("couldn't find port in .env")
 	}
 
 	dbURL := os.Getenv("DATABASE_CONN")
 	if dbURL == "" {
-		return nil, errors.New("couldn't find database connection string in .env")
+		return nil, nil, errors.New("couldn't find database connection string in .env")
 	}
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	NewServer := &Server{
@@ -39,7 +39,7 @@ func NewServer() (*http.Server, error) {
 		Addr:    fmt.Sprintf("localhost:%s", port),
 		Handler: NewServer.RegisterRoutes(),
 	}
-	return server, nil
+	return server, NewServer, nil
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
