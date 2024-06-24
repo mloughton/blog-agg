@@ -4,13 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"encoding/xml"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/mloughton/blog-agg/internal/database"
 )
 
@@ -88,6 +88,26 @@ func scrapeFeed(db *database.Queries, wg *sync.WaitGroup, feed database.Feed) {
 		log.Println(err)
 	}
 	for _, post := range feedData.Channel.Item {
-		fmt.Println(post.Title)
+		newUUID, err := uuid.NewUUID()
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		pubDate, err := time.Parse(time.RFC1123Z, post.PubDate)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		params := database.CreatePostParams{
+			ID:          newUUID,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Title:       post.Title,
+			Url:         post.Link,
+			Description: post.Description,
+			PublishedAt: pubDate,
+			FeedID:      feed.ID,
+		}
+		db.CreatePost(context.Background(), params)
 	}
 }

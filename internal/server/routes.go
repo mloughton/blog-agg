@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,6 +26,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux.HandleFunc("POST /v1/feed_follows", s.middlewareAuth(s.PostFeedFollowsHandler))
 	mux.HandleFunc("GET /v1/feed_follows", s.middlewareAuth(s.GetFeedFollowsHandler))
 	mux.HandleFunc("DELETE /v1/feed_follows/{feedFollowID}", s.DeleteFeedFollowsHandler)
+
+	mux.HandleFunc("GET /v1/posts", s.middlewareAuth(s.GetPostsHandler))
 	return mux
 }
 
@@ -190,4 +193,21 @@ func (s *Server) DeleteFeedFollowsHandler(w http.ResponseWriter, r *http.Request
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) GetPostsHandler(w http.ResponseWriter, r *http.Request, u database.User) {
+	limitString := r.URL.Query().Get("limit")
+	limit, err := strconv.Atoi(limitString)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid limit parameter")
+	}
+	params := database.GetPostsByUserParams{
+		UserID: u.ID,
+		Limit:  int32(limit),
+	}
+	posts, err := s.DB.GetPostsByUser(context.Background(), params)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "internal server error")
+	}
+	respondWithJSON(w, http.StatusOK, posts)
 }
